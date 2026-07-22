@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoneyTrack Pro - Tracking Keuangan</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="toast" id="toast"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">MT</div>
+        <div>
+          <h1>MoneyTrack</h1>
+          <p>Smart cashflow tracker</p>
+        </div>
+      </div>
+
+      <nav class="menu">
+        <a class="active" href="#dashboard">Dashboard</a>
+        <a href="#form">Tambah Transaksi</a>
+        <a href="#insight">Insight</a>
+        <a href="#history">Riwayat</a>
+      </nav>
+
+      <div class="budget-widget">
+        <div class="mini-header">
+          <p class="label">Budget Bulanan</p>
+          <button id="editBudgetBtn" class="ghost-btn">Edit</button>
+        </div>
+        <h3 id="budgetAmount">Rp0</h3>
+        <div class="budget-progress">
+          <div id="budgetBar"></div>
+        </div>
+        <p id="budgetStatus">Belum ada budget.</p>
+      </div>
+
+      <div class="tips-card">
+        <p class="label">Insight</p>
+        <h3 id="tipTitle">Mulai dari pola kecil.</h3>
+        <p id="tipText">Catat transaksi rutin supaya kelihatan kategori yang paling sering bocor.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Personal Finance Tracker</p>
+          <h2>Dashboard Keuangan</h2>
+        </div>
+        <div class="toolbar">
+          <input id="monthFilter" type="month" />
+          <button id="themeToggle" class="secondary-btn" type="button">Mode Terang</button>
+          <button id="exportBtn" class="secondary-btn" type="button">Export CSV</button>
+          <label class="secondary-btn import-label" for="importInput">Import CSV</label>
+          <input id="importInput" type="file" accept=".csv" hidden />
+        </div>
+      </header>
+
+      <section id="dashboard" class="summary-grid">
+        <article class="summary-card balance">
+          <div class="card-icon">💰</div>
+          <p>Saldo Periode</p>
+          <h3 id="balanceAmount">Rp0</h3>
+          <span>Total pemasukan - pengeluaran</span>
+        </article>
+        <article class="summary-card income">
+          <div class="card-icon">📈</div>
+          <p>Total Pemasukan</p>
+          <h3 id="incomeAmount">Rp0</h3>
+          <span>Semua transaksi masuk</span>
+        </article>
+        <article class="summary-card expense">
+          <div class="card-icon">📉</div>
+          <p>Total Pengeluaran</p>
+          <h3 id="expenseAmount">Rp0</h3>
+          <span>Semua transaksi keluar</span>
+        </article>
+        <article class="summary-card saving-rate">
+          <div class="card-icon">🎯</div>
+          <p>Saving Rate</p>
+          <h3 id="savingRateAmount">0%</h3>
+          <span>Persentase sisa pemasukan</span>
+        </article>
+      </section>
+
+      <section class="quick-actions">
+        <button class="quick-chip income" data-quick="Gaji|income|1000000|Gaji|Quick add: gaji">💼 Gaji</button>
+        <button class="quick-chip income" data-quick="Kiriman ortu|income|1500000|Kiriman Ortu|Quick add: kiriman ortu">👨‍👩‍👦 Kiriman Ortu</button>
+        <button class="quick-chip expense" data-quick="Makan|expense|10000|Makan|Quick add: makan">🍜 Makan</button>
+        <button class="quick-chip expense" data-quick="Transport|expense|20000|Transport|Quick add: transport">🛵 Transport</button>
+        <button class="quick-chip expense" data-quick="Snack|expense|15000|Hiburan|Quick add: snack">🍫 Snack</button>
+        <button class="quick-chip expense" data-quick="Biaya kost|expense|500000|Kost|Quick add: biaya kost">🏠 Biaya Kost</button>
+      </section>
+
+      <section class="content-grid">
+        <section id="form" class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Input Data</p>
+              <h3 id="formTitle">Tambah Transaksi</h3>
+            </div>
+            <button id="cancelEditBtn" class="ghost-btn hidden" type="button">Batal Edit</button>
+          </div>
+
+          <form id="transactionForm">
+            <input id="editingId" type="hidden" />
+            <div class="form-group">
+              <label for="title">Nama Transaksi</label>
+              <input id="title" type="text" placeholder="Contoh: Gaji freelance" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="type">Tipe</label>
+                <select id="type" required>
+                  <option value="income">Pemasukan</option>
+                  <option value="expense">Pengeluaran</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="amount">Nominal</label>
+                <input id="amount" type="number" min="1" placeholder="50000" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="category">Kategori</label>
+                <select id="category" required>
+                  <option value="Gaji">💼 Gaji</option>
+                  <option value="Kiriman Ortu">👨‍👩‍👦 Kiriman Ortu</option>
+                  <option value="Freelance">🧑‍💻 Freelance</option>
+                  <option value="Makan">🍜 Makan</option>
+                  <option value="Transport">🛵 Transport</option>
+                  <option value="Belajar">📚 Belajar</option>
+                  <option value="Hiburan">🎮 Hiburan</option>
+                  <option value="Tagihan">🧾 Tagihan</option>
+                  <option value="Kost">🏠 Kost</option>
+                  <option value="Investasi">📈 Investasi</option>
+                  <option value="Lainnya">🗂️ Lainnya</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="date">Tanggal</label>
+                <input id="date" type="date" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="note">Catatan</label>
+              <textarea id="note" rows="3" placeholder="Opsional"></textarea>
+            </div>
+
+            <button id="submitBtn" class="primary-btn" type="submit">Simpan Transaksi</button>
+          </form>
+        </section>
+
+        <section id="insight" class="panel chart-panel">
+          <div class="panel-header split">
+            <div>
+              <p class="eyebrow">Insight Cepat</p>
+              <h3>Pengeluaran per Kategori</h3>
+            </div>
+            <span id="topCategoryBadge" class="small-badge">-</span>
+          </div>
+          <div id="categoryChart" class="category-chart empty-state">
+            Belum ada data pengeluaran.
+          </div>
+        </section>
+      </section>
+
+      <section class="insight-grid">
+        <article class="panel mini-panel">
+          <p class="eyebrow">Rata-rata</p>
+          <h3 id="avgDailyExpense">Rp0</h3>
+          <span>Pengeluaran harian periode ini</span>
+        </article>
+        <article class="panel mini-panel">
+          <p class="eyebrow">Transaksi</p>
+          <h3 id="transactionCount">0</h3>
+          <span>Total transaksi periode ini</span>
+        </article>
+        <article class="panel mini-panel">
+          <p class="eyebrow">Budget Tersisa</p>
+          <h3 id="remainingBudget">Rp0</h3>
+          <span>Sisa dari budget bulanan</span>
+        </article>
+      </section>
+
+      <section class="panel trend-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Tren Harian</p>
+            <h3>Pemasukan vs Pengeluaran</h3>
+          </div>
+        </div>
+        <div id="dailyTrend" class="daily-trend empty-state">Belum ada data tren.</div>
+      </section>
+
+      <section id="history" class="panel table-panel">
+        <div class="panel-header split">
+          <div>
+            <p class="eyebrow">Riwayat</p>
+            <h3>Daftar Transaksi</h3>
+          </div>
+          <div class="filters">
+            <select id="filterType">
+              <option value="all">Semua Tipe</option>
+              <option value="income">Pemasukan</option>
+              <option value="expense">Pengeluaran</option>
+            </select>
+            <select id="sortBy">
+              <option value="newest">Terbaru</option>
+              <option value="oldest">Terlama</option>
+              <option value="highest">Nominal terbesar</option>
+              <option value="lowest">Nominal terkecil</option>
+            </select>
+            <input id="searchInput" type="search" placeholder="Cari transaksi..." />
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Nama</th>
+                <th>Kategori</th>
+                <th>Tipe</th>
+                <th>Nominal</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTable"></tbody>
+          </table>
+        </div>
+
+        <div class="danger-zone">
+          <button id="clearAllBtn" class="danger-btn" type="button">Hapus Semua Data</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="budgetModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Atur Budget Bulanan</h3>
+        <button id="closeBudgetModal" class="ghost-btn" type="button">Tutup</button>
+      </div>
+      <p>Budget dipakai untuk membaca apakah pengeluaran bulan ini masih aman atau sudah berisiko.</p>
+      <input id="budgetInput" type="number" min="0" placeholder="Contoh: 1200000" />
+      <button id="saveBudgetBtn" class="primary-btn" type="button">Simpan Budget</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
