@@ -129,16 +129,16 @@ async function fetchFromGoogleSheets() {
     const data = await response.json();
 
     if (Array.isArray(data)) {
-      // Pemetaan data dari format Google Sheets ke struktur app
+      // Pemetaan langsung sesuai nama header di Google Sheets kamu
       transactions = data.map((item) => ({
-        id: item.id || crypto.randomUUID(),
-        title: item.Nama || item.title || "Transaksi Tanpa Nama",
-        type: item.Tipe === "Pemasukan" || item.type === "income" ? "income" : "expense",
-        amount: Number(item.Nominal || item.amount || 0),
-        category: item.Kategori || item.category || "Lainnya",
-        date: formatDateForApp(item.Tanggal || item.date),
-        note: item.Catatan || item.note || "",
-        createdAt: item.createdAt || new Date().toISOString()
+        id: crypto.randomUUID(),
+        title: item.title || "Transaksi Tanpa Nama",
+        type: item.type === "income" ? "income" : "expense",
+        amount: Number(item.amount || 0),
+        category: item.category || "Lainnya",
+        date: formatDateForApp(item.date),
+        note: item.note || "",
+        createdAt: new Date().toISOString()
       }));
 
       saveLocalTransactions();
@@ -154,14 +154,14 @@ async function fetchFromGoogleSheets() {
 async function sendToGoogleSheets(transaction) {
   if (!API_URL || API_URL.includes("URL_WEB_APP_APPS_SCRIPT_KAMU_DI_SINI")) return;
 
+  // Format data sesuai dengan header spreadsheet kamu: date, title, category, type, amount, note
   const payload = {
-    id: transaction.id,
-    tanggal: transaction.date,
-    nama: transaction.title,
-    kategori: transaction.category,
-    tipe: transaction.type === "income" ? "Pemasukan" : "Pengeluaran",
-    nominal: transaction.amount,
-    catatan: transaction.note
+    date: formatDateForApp(transaction.date),
+    title: transaction.title,
+    category: transaction.category,
+    type: transaction.type, // 'income' atau 'expense'
+    amount: transaction.amount,
+    note: transaction.note
   };
 
   try {
