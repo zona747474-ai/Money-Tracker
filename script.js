@@ -1,3 +1,9 @@
+// ==========================================
+// CONFIG & CONSTANTS
+// ==========================================
+// GANTI URL DI BAWAH INI DENGAN WEB APP URL GOOGLE APPS SCRIPT KAMU
+const API_URL = "URL_WEB_APP_APPS_SCRIPT_KAMU_DI_SINI";
+
 const STORAGE_KEY = "moneytrack_transactions_v2";
 const BUDGET_KEY = "moneytrack_monthly_budget";
 const THEME_KEY = "moneytrack_theme";
@@ -16,6 +22,9 @@ const CATEGORY_META = {
   "Lainnya": { icon: "🗂️" },
 };
 
+// ==========================================
+// DOM ELEMENTS
+// ==========================================
 const form = document.getElementById("transactionForm");
 const editingIdInput = document.getElementById("editingId");
 const titleInput = document.getElementById("title");
@@ -58,16 +67,27 @@ const saveBudgetBtn = document.getElementById("saveBudgetBtn");
 const tipTitle = document.getElementById("tipTitle");
 const tipText = document.getElementById("tipText");
 
+// ==========================================
+// STATE MANAGEMENT
+// ==========================================
 const today = new Date();
 dateInput.valueAsDate = today;
 monthFilter.value = today.toISOString().slice(0, 7);
 
-let transactions = getTransactions();
+let transactions = getLocalTransactions();
 let monthlyBudget = Number(localStorage.getItem(BUDGET_KEY)) || 1200000;
 
+// ==========================================
+// INITIALIZATION
+// ==========================================
 initTheme();
 renderApp();
+// Ambil data terbaru dari Google Sheets saat pertama dibuka
+fetchFromGoogleSheets();
 
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
 form.addEventListener("submit", handleSubmit);
 filterType.addEventListener("change", renderTable);
 sortBy.addEventListener("change", renderTable);
@@ -97,7 +117,86 @@ document.querySelectorAll(".menu a").forEach((link) => {
   });
 });
 
-function handleSubmit(event) {
+// ==========================================
+// GOOGLE SHEETS API INTEGRATION
+// ==========================================
+async function fetchFromGoogleSheets() {
+  if (!API_URL || API_URL.includes("URL_WEB_APP_APPS_SCRIPT_KAMU_DI_SINI")) return;
+
+  try {
+    showToast("Mengambil data dari Google Sheets...");
+    const response = await fetch(API_URL);
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+      // Pemetaan data dari format Google Sheets ke struktur app
+      transactions = data.map((item) => ({
+        id: item.id || crypto.randomUUID(),
+        title: item.Nama || item.title || "Transaksi Tanpa Nama",
+        type: item.Tipe === "Pemasukan" || item.type === "income" ? "income" : "expense",
+        amount: Number(item.Nominal || item.amount || 0),
+        category: item.Kategori || item.category || "Lainnya",
+        date: formatDateForApp(item.Tanggal || item.date),
+        note: item.Catatan || item.note || "",
+        createdAt: item.createdAt || new Date().toISOString()
+      }));
+
+      saveLocalTransactions();
+      renderApp();
+      showToast("Data berhasil diperbarui dari Google Sheets!");
+    }
+  } catch (error) {
+    console.error("Gagal sinkronisasi Google Sheets:", error);
+    showToast("Gagal mengambil data dari Google Sheets, memakai data lokal.");
+  }
+}
+
+async function sendToGoogleSheets(transaction) {
+  if (!API_URL || API_URL.includes("URL_WEB_APP_APPS_SCRIPT_KAMU_DI_SINI")) return;
+
+  const payload = {
+    id: transaction.id,
+    tanggal: transaction.date,
+    nama: transaction.title,
+    kategori: transaction.category,
+    tipe: transaction.type === "income" ? "Pemasukan" : "Pengeluaran",
+    nominal: transaction.amount,
+    catatan: transaction.note
+  };
+
+  try {
+    showToast("Menyimpan ke Google Sheets...");
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    if (result.status === "success") {
+      showToast("Tersimpan di Google Sheets!");
+    } else {
+      showToast("Gagal simpan ke Cloud: " + result.message);
+    }
+  } catch (error) {
+    console.error("Gagal kirim ke Google Sheets:", error);
+    showToast("Gagal terhubung ke Cloud. Data tersimpan lokal.");
+  }
+}
+
+function formatDateForApp(dateStr) {
+  if (!dateStr) return new Date().toISOString().slice(0, 10);
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
+  return d.toISOString().slice(0, 10);
+}
+
+// ==========================================
+// CORE APP FUNCTIONS
+// ==========================================
+async function handleSubmit(event) {
   event.preventDefault();
 
   const transaction = {
@@ -122,10 +221,11 @@ function handleSubmit(event) {
     showToast("Transaksi berhasil diedit.");
   } else {
     transactions.unshift(transaction);
-    showToast("Transaksi berhasil disimpan.");
+    // Kirim data ke Cloud jika transaksi baru
+    sendToGoogleSheets(transaction);
   }
 
-  saveTransactions();
+  saveLocalTransactions();
   resetFormMode();
   renderApp();
 }
@@ -134,34 +234,13 @@ function getExistingCreatedAt(id) {
   return transactions.find((item) => item.id === id)?.createdAt || new Date().toISOString();
 }
 
-function getTransactions() {
+function getLocalTransactions() {
   const newData = localStorage.getItem(STORAGE_KEY);
   if (newData) return JSON.parse(newData);
-
-  const oldData = localStorage.getItem("moneytrack_transactions");
-  if (oldData) return JSON.parse(oldData);
-
-  return getSampleData();
+  return [];
 }
 
-function getSampleData() {
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  return [
-    createSeed("Uang bulanan", "income", 1500000, "Gaji", `${currentMonth}-01`, "Data contoh"),
-    createSeed("Freelance landing page", "income", 450000, "Freelance", `${currentMonth}-06`, "Data contoh"),
-    createSeed("Makan siang", "expense", 28000, "Makan", `${currentMonth}-03`, "Data contoh"),
-    createSeed("Transport kampus", "expense", 20000, "Transport", `${currentMonth}-04`, "Data contoh"),
-    createSeed("Langganan internet", "expense", 165000, "Tagihan", `${currentMonth}-05`, "Data contoh"),
-    createSeed("Course analytics", "expense", 120000, "Belajar", `${currentMonth}-09`, "Data contoh"),
-    createSeed("Kopi dan snack", "expense", 35000, "Hiburan", `${currentMonth}-10`, "Data contoh"),
-  ];
-}
-
-function createSeed(title, type, amount, category, date, note) {
-  return { id: crypto.randomUUID(), title, type, amount, category, date, note, createdAt: new Date().toISOString() };
-}
-
-function saveTransactions() {
+function saveLocalTransactions() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
 
@@ -393,13 +472,13 @@ function editTransaction(id) {
 }
 
 function deleteTransaction(id) {
-  const isConfirmed = confirm("Yakin mau hapus transaksi ini?");
+  const isConfirmed = confirm("Yakin mau hapus transaksi ini dari tampilan lokal?");
   if (!isConfirmed) return;
 
   transactions = transactions.filter((item) => item.id !== id);
-  saveTransactions();
+  saveLocalTransactions();
   renderApp();
-  showToast("Transaksi dihapus.");
+  showToast("Transaksi dihapus secara lokal.");
 }
 
 function resetFormMode() {
@@ -477,7 +556,7 @@ function importFromCSV(event) {
     }).filter((item) => item.amount > 0);
 
     transactions = [...imported, ...transactions];
-    saveTransactions();
+    saveLocalTransactions();
     renderApp();
     showToast(`${imported.length} transaksi berhasil diimport.`);
     importInput.value = "";
@@ -510,12 +589,12 @@ function parseCSVLine(line) {
 }
 
 function clearAllData() {
-  const isConfirmed = confirm("Yakin mau hapus semua data transaksi? Aksi ini tidak bisa dibatalkan.");
+  const isConfirmed = confirm("Yakin mau hapus semua data transaksi di aplikasi lokal?");
   if (!isConfirmed) return;
   transactions = [];
-  saveTransactions();
+  saveLocalTransactions();
   renderApp();
-  showToast("Semua data transaksi dihapus.");
+  showToast("Semua data transaksi lokal dihapus.");
 }
 
 function openBudgetModal() {
