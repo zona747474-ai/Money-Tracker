@@ -121,7 +121,7 @@ document.querySelectorAll(".menu a").forEach((link) => {
 // GOOGLE SHEETS API INTEGRATION
 // ==========================================
 async function fetchFromGoogleSheets() {
-  if (!API_URL || API_URL.includes("URL_WEB_APP_APPS_SCRIPT_KAMU_DI_SINI")) return;
+  if (!API_URL || API_URL.includes("https://script.google.com/macros/s/AKfycbwZTw33RJWsN6FjmjSbyWIBzf5f7dtNrEpGw30__s3EFqKkWjwFW_e17U8mhmZbtkov/exec")) return;
 
   try {
     showToast("Mengambil data dari Google Sheets...");
@@ -136,7 +136,7 @@ async function fetchFromGoogleSheets() {
         type: item.type === "income" ? "income" : "expense",
         amount: Number(item.amount || 0),
         category: item.category || "Lainnya",
-        date: formatDateForApp(item.date),
+        date: normalizeDate(item.date),
         note: item.note || "",
         createdAt: new Date().toISOString()
       }));
@@ -186,11 +186,34 @@ async function sendToGoogleSheets(transaction) {
   }
 }
 
-function formatDateForApp(dateStr) {
-  if (!dateStr) return new Date().toISOString().slice(0, 10);
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
-  return d.toISOString().slice(0, 10);
+function normalizeDate(dateVal) {
+  if (!dateVal) return new Date().toISOString().slice(0, 10);
+
+  // Jika input berupa string dan mengandung karakter garis miring "/" (contoh: "7/5/2026")
+  if (typeof dateVal === 'string' && dateVal.includes('/')) {
+    const parts = dateVal.split('/');
+    if (parts.length === 3) {
+      // Di Google Sheets, format default biasanya M/D/YYYY
+      const month = parts[0].padStart(2, '0'); // Mengubah "7" jadi "07"
+      const day = parts[1].padStart(2, '0');   // Mengubah "5" jadi "05"
+      const year = parts[2];
+      
+      return `${year}-${month}-${day}`; // Menghasilkan "2026-07-05"
+    }
+  }
+
+  // Jika formatnya sudah berupa Objek Date atau ISO String
+  const d = new Date(dateVal);
+  if (!isNaN(d.getTime())) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  }
+
+  // Fallback jika tanggal tidak valid
+  return new Date().toISOString().slice(0, 10);
 }
 
 // ==========================================
