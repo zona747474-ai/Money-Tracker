@@ -2,7 +2,7 @@
 // CONFIG & CONSTANTS
 // ==========================================
 // GANTI URL DI BAWAH INI DENGAN WEB APP URL GOOGLE APPS SCRIPT KAMU
-const API_URL = "https://script.google.com/macros/s/AKfycbyw8qSPlnsIZTOAndF26IcJqexOSULCEUmd4P6xSz5_Gpk1MtPoOnCm4pBXLdrLY2HG/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwZTw33RJWsN6FjmjSbyWIBzf5f7dtNrEpGw30__s3EFqKkWjwFW_e17U8mhmZbtkov/exec";
 
 const STORAGE_KEY = "moneytrack_transactions_v2";
 const BUDGET_KEY = "moneytrack_monthly_budget";
